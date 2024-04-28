@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import useWebSocket, { ReadyState } from "react-use-websocket";
+import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 
 const WS_URL = "ws://localhost:4000/socket/websocket";
 
-export default function Game({ params }: { params: { id: string } }) {
-  const [hasPlayer, setHasPlayer] = useState(false);
-  const [hasGameStarted, setHasGameStarted] = useState(false)
+export default function PlayerGame({ params }: { params: { id: string } }) {
+  const [hasGameStarted, setHasGameStarted] = useState(false);
+  const [flightId, setFlightId] = useState(0);
 
   const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
     WS_URL,
@@ -30,47 +31,33 @@ export default function Game({ params }: { params: { id: string } }) {
         payload: {},
         ref: "1",
       });
+      sendJsonMessage({
+        topic: "room:lobby",
+        event: "shout",
+        payload: { message: "join" },
+        ref: "2",
+      });
     }
   }, [readyState, sendJsonMessage]);
 
   useEffect(() => {
     if (lastJsonMessage) {
-      let userJoined =
+      let gameStarted =
         lastJsonMessage.event === "shout" &&
-        lastJsonMessage.payload.message === "join";
-      setHasPlayer(userJoined);
+        lastJsonMessage.payload.message === "start";
+      if (gameStarted) {
+        setFlightId(lastJsonMessage.payload.mapId);
+      }
+      setHasGameStarted(gameStarted);
     }
   }, [lastJsonMessage]);
 
-  const handleStartGame = () => {
-    if (readyState === ReadyState.OPEN) {
-      sendJsonMessage({
-        topic: "room:lobby",
-        event: "shout",
-        payload: { message: "start" },
-        ref: "2",
-      });
-    }
-  };
-
   return hasGameStarted ? (
-    <div>
-      {/**map */}
-    </div>
+    <div>{/**map */}</div>
   ) : (
     <div className="flex flex-col justify-center items-center h-screen space-y-2">
-      <p>
-      {`Game session id: ${params.id}`}
-      </p>
-      <button
-        onClick={handleStartGame}
-        disabled={!(readyState === ReadyState.OPEN && hasPlayer)}
-        className={`${
-          readyState === ReadyState.OPEN && hasPlayer ? "bg-gray-800" : "bg-gray-400"
-        } text-white`}
-      >
-        Start Game
-      </button>
+      <p>{`Game session id: ${params.id}`}</p>
+      <span className="text-gray-500">Waiting for host to start...</span>
     </div>
   );
 }

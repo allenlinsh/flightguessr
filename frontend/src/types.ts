@@ -48,8 +48,24 @@ export interface FlightData {
       flight_icao: string | null;
     } | null;
   };
-  aircraft: any;
-  live: any;
+  aircraft: {
+    registration: string | null;
+    iata: string | null;
+    icao: string | null;
+    icao24: string | null;
+  } | null;
+  live: Plane | null;
+}
+
+export interface Plane {
+  updated: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  altitude: number | null;
+  direction: number | null;
+  speed_horizontal: number | null;
+  speed_vertical: number | null;
+  is_ground: boolean;
 }
 
 export type FlightsResponse = Array<FlightData>;
